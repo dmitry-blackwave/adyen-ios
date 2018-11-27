@@ -21,12 +21,16 @@ internal final class StoredCardPlugin: NSObject, PaymentDetailsPlugin {
     
     // MARK: - PaymentDetailsPlugin
     
-    internal func present(_ details: [PaymentDetail], using navigationController: UINavigationController, appearance: Appearance, completion: @escaping Completion<[PaymentDetail]>) {
+    internal var preferredPresentationMode: PaymentDetailsPluginPresentationMode {
+        return .present
+    }
+    
+    internal func viewController(for details: [PaymentDetail], appearance: Appearance, completion: @escaping Completion<[PaymentDetail]>) -> UIViewController {
         let alertManager = AlertManager(paymentSession: paymentSession, paymentMethod: paymentMethod, appearance: appearance)
         alertManager.completionHandler = completion
-        navigationController.present(alertManager.alertController, animated: true, completion: nil)
-        
         self.alertManager = alertManager
+        
+        return alertManager.alertController
     }
     
     internal func finish(with result: Result<PaymentResult>, completion: @escaping () -> Void) {
@@ -80,8 +84,8 @@ extension StoredCardPlugin {
         }()
         
         private lazy var payAction: UIAlertAction = {
-            let amount = paymentSession.payment.amount
-            let actionTitle = appearance.checkoutButtonAttributes.title(forAmount: amount.value, currencyCode: amount.currencyCode)
+            let amount = paymentSession.payment.amount(for: paymentMethod)
+            let actionTitle = appearance.checkoutButtonAttributes.title(for: amount)
             let action = UIAlertAction(title: actionTitle, style: .default) { [unowned self] _ in
                 self.submit()
             }
